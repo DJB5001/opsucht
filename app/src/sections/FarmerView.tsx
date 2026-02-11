@@ -5,22 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, CheckCircle, Clock, Calendar, Play, Upload, CheckSquare } from 'lucide-react';
-import type { FarmOrder, User } from '@/types';
+import type { User } from '@/types';
 import { getBlockById } from '@/types';
+import { useFarmerOrders } from '@/hooks/useFarmerOrders';
 
 interface FarmerViewProps {
-  orders: FarmOrder[];
   currentUser: User;
-  onAcceptOrder: (orderId: string) => void;
-  onUpdateProgress: (orderId: string, blockId: string, amount: number) => void;
-  onSubmitOrder: (orderId: string) => void;
 }
 
-export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgress, onSubmitOrder }: FarmerViewProps) {
+export function FarmerView({ currentUser }: FarmerViewProps) {
+  const { orders, acceptOrder, updateProgress, submitOrder } = useFarmerOrders();
   const [activeTab, setActiveTab] = useState('available');
 
-  const availableOrders = orders.filter(order => 
-    order.status === 'open' && 
+  const availableOrders = orders.filter(order =>
+    order.status === 'open' &&
     !order.userProgress.some(p => p.userId === currentUser.id)
   );
 
@@ -54,17 +52,17 @@ export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgres
     }
   };
 
-  const calculateProgress = (order: FarmOrder) => {
+  const calculateProgress = (order: typeof orders[0]) => {
     const progress = order.userProgress.find(p => p.userId === currentUser.id);
     if (!progress) return 0;
-    
+
     const totalItems = order.items.reduce((sum, item) => sum + item.amount, 0);
     const completedItems = progress.completedItems.reduce((sum, item) => sum + item.amount, 0);
-    
+
     return Math.round((completedItems / totalItems) * 100);
   };
 
-  const getCompletedAmount = (order: FarmOrder, blockId: string) => {
+  const getCompletedAmount = (order: typeof orders[0], blockId: string) => {
     const progress = order.userProgress.find(p => p.userId === currentUser.id);
     return progress?.completedItems.find(ci => ci.blockId === blockId)?.amount || 0;
   };
@@ -127,7 +125,7 @@ export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgres
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => onAcceptOrder(order.id)}
+                        onClick={() => acceptOrder(order.id)}
                         className="bg-blue-600 hover:bg-blue-500 text-white"
                       >
                         <Play className="w-4 h-4 mr-1" />
@@ -185,7 +183,7 @@ export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgres
                                     min="0"
                                     max={item.amount}
                                     value={completed}
-                                    onChange={(e) => onUpdateProgress(order.id, item.blockId, parseInt(e.target.value) || 0)}
+                                    onChange={(e) => updateProgress(order.id, item.blockId, parseInt(e.target.value) || 0)}
                                     className="w-20 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                                   />
                                   <span className="text-slate-400 text-sm">/ {item.amount} {item.unit === 'dk' ? 'DK' : 'Kisten'}</span>
@@ -195,7 +193,7 @@ export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgres
                           })}
                         </div>
                       </div>
-                      
+
                       <div className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-slate-400">Fortschritt</span>
@@ -211,7 +209,7 @@ export function FarmerView({ orders, currentUser, onAcceptOrder, onUpdateProgres
                         </span>
                         <Button
                           size="sm"
-                          onClick={() => onSubmitOrder(order.id)}
+                          onClick={() => submitOrder(order.id)}
                           disabled={progress < 100}
                           className="bg-purple-600 hover:bg-purple-500 text-white disabled:bg-slate-600"
                         >

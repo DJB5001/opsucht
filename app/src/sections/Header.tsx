@@ -4,7 +4,7 @@ import type { User as UserType } from '@/types';
 
 interface HeaderProps {
   currentUser: UserType;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 export function Header({ currentUser, onLogout }: HeaderProps) {
@@ -21,7 +21,7 @@ export function Header({ currentUser, onLogout }: HeaderProps) {
               <p className="text-xs text-slate-400">Farm Management</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
               <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">

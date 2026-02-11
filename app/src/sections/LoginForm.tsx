@@ -5,24 +5,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sprout, User, Lock } from 'lucide-react';
 
 interface LoginFormProps {
-  onLogin: (username: string, password: string) => boolean;
+  onLogin: (username: string, password: string) => Promise<{ error?: string }>;
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) {
       setError('Bitte Benutzername und Passwort eingeben');
       return;
     }
-    const success = onLogin(username, password);
-    if (!success) {
-      setError('Ungültiger Benutzername oder Passwort');
+    setLoading(true);
+    setError('');
+    const result = await onLogin(username, password);
+    if (result.error) {
+      setError(result.error);
     }
+    setLoading(false);
   };
 
   return (
@@ -56,6 +60,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -69,6 +74,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -77,9 +83,10 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             )}
             <Button
               type="submit"
+              disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-2"
             >
-              Anmelden
+              {loading ? 'Anmelden...' : 'Anmelden'}
             </Button>
           </form>
         </CardContent>

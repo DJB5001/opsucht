@@ -6,19 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { UserPlus, Trash2, Users, Eye } from 'lucide-react';
-import type { User, FarmOrder, AbsenceRequest } from '@/types';
+import type { User } from '@/types';
 import { UserProfile } from './UserProfile';
+import { useUsers } from '@/hooks/useUsers';
+import { useOrders } from '@/hooks/useOrders';
+import { useAbsences } from '@/hooks/useAbsences';
 
 interface UserManagementProps {
-  users: User[];
-  orders: FarmOrder[];
-  absences: AbsenceRequest[];
   currentUser: User;
-  onCreateUser: (username: string, password: string, role: User['role']) => void;
-  onDeleteUser: (userId: string) => void;
 }
 
-export function UserManagement({ users, orders, absences, currentUser, onCreateUser, onDeleteUser }: UserManagementProps) {
+export function UserManagement({ currentUser }: UserManagementProps) {
+  const { users, createUser, deleteUser } = useUsers();
+  const { orders } = useOrders();
+  const { absences } = useAbsences();
+
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<User['role']>('farmer');
@@ -26,13 +28,22 @@ export function UserManagement({ users, orders, absences, currentUser, onCreateU
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!newUsername || !newPassword) return;
-    onCreateUser(newUsername, newPassword, newRole);
-    setNewUsername('');
-    setNewPassword('');
-    setNewRole('farmer');
+    setCreating(true);
+    setCreateError('');
+    const result = await createUser(newUsername, newPassword, newRole);
+    if (result.error) {
+      setCreateError(result.error);
+    } else {
+      setNewUsername('');
+      setNewPassword('');
+      setNewRole('farmer');
+    }
+    setCreating(false);
   };
 
   const handleDeleteClick = (user: User) => {
@@ -40,9 +51,9 @@ export function UserManagement({ users, orders, absences, currentUser, onCreateU
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (userToDelete) {
-      onDeleteUser(userToDelete.id);
+      await deleteUser(userToDelete.id);
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
@@ -71,13 +82,15 @@ export function UserManagement({ users, orders, absences, currentUser, onCreateU
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              disabled={creating}
             />
             <Input
-              type="text"
+              type="password"
               placeholder="Passwort"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              disabled={creating}
             />
             <Select value={newRole} onValueChange={(v) => setNewRole(v as User['role'])}>
               <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
@@ -90,13 +103,16 @@ export function UserManagement({ users, orders, absences, currentUser, onCreateU
               </SelectContent>
             </Select>
           </div>
+          {createError && (
+            <p className="text-red-400 text-sm">{createError}</p>
+          )}
           <Button
             onClick={handleCreateUser}
-            disabled={!newUsername || !newPassword}
+            disabled={!newUsername || !newPassword || creating}
             className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white"
           >
             <UserPlus className="w-4 h-4 mr-2" />
-            Benutzer erstellen
+            {creating ? 'Erstelle...' : 'Benutzer erstellen'}
           </Button>
         </CardContent>
       </Card>
