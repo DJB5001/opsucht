@@ -5,25 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Plus, CheckCircle, XCircle, Clock } from 'lucide-react';
-import type { AbsenceRequest, User } from '@/types';
+import type { User } from '@/types';
+import { useAbsences } from '@/hooks/useAbsences';
 
 interface AbsenceRequestsProps {
-  requests: AbsenceRequest[];
   currentUser: User;
-  onCreateRequest: (startDate: string, endDate: string, reason: string) => void;
-  onApproveRequest?: (requestId: string) => void;
-  onRejectRequest?: (requestId: string) => void;
 }
 
-export function AbsenceRequests({ requests, currentUser, onCreateRequest, onApproveRequest, onRejectRequest }: AbsenceRequestsProps) {
+export function AbsenceRequests({ currentUser }: AbsenceRequestsProps) {
+  const { absences, createAbsence, approveAbsence, rejectAbsence } = useAbsences();
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!startDate || !endDate || !reason) return;
-    onCreateRequest(startDate, endDate, reason);
+    await createAbsence(startDate, endDate, reason);
     setStartDate('');
     setEndDate('');
     setReason('');
@@ -47,8 +46,8 @@ export function AbsenceRequests({ requests, currentUser, onCreateRequest, onAppr
     return new Date(dateStr).toLocaleDateString('de-DE');
   };
 
-  const myRequests = requests.filter(r => r.userId === currentUser.id);
-  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const myRequests = absences.filter(r => r.userId === currentUser.id);
+  const pendingRequests = absences.filter(r => r.status === 'pending');
 
   return (
     <div className="space-y-6">
@@ -150,7 +149,7 @@ export function AbsenceRequests({ requests, currentUser, onCreateRequest, onAppr
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => onApproveRequest?.(request.id)}
+                        onClick={() => approveAbsence(request.id)}
                         className="bg-green-600 hover:bg-green-500 text-white"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
@@ -159,7 +158,7 @@ export function AbsenceRequests({ requests, currentUser, onCreateRequest, onAppr
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => onRejectRequest?.(request.id)}
+                        onClick={() => rejectAbsence(request.id)}
                       >
                         <XCircle className="w-4 h-4 mr-1" />
                         Ablehnen
@@ -212,11 +211,11 @@ export function AbsenceRequests({ requests, currentUser, onCreateRequest, onAppr
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {requests.length === 0 ? (
+            {absences.length === 0 ? (
               <p className="text-slate-400 text-center py-4">Keine Anträge vorhanden</p>
             ) : (
               <div className="space-y-3">
-                {requests.map(request => (
+                {absences.map(request => (
                   <div key={request.id} className="p-4 bg-slate-700 rounded-lg">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       {getStatusBadge(request.status)}

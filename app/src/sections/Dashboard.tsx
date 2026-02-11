@@ -1,22 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Users, Calendar, CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import type { FarmOrder, User, AbsenceRequest } from '@/types';
+import type { User } from '@/types';
+import { useOrders } from '@/hooks/useOrders';
+import { useUsers } from '@/hooks/useUsers';
+import { useAbsences } from '@/hooks/useAbsences';
 
 interface DashboardProps {
-  orders: FarmOrder[];
-  users: User[];
-  absences: AbsenceRequest[];
   currentUser: User;
 }
 
-export function Dashboard({ orders, users, absences, currentUser }: DashboardProps) {
+export function Dashboard({ currentUser }: DashboardProps) {
+  const { orders } = useOrders();
+  const { users } = useUsers();
+  const { absences } = useAbsences();
+
   const totalOrders = orders.length;
   const openOrders = orders.filter(o => o.status === 'open').length;
-  
+
   const totalFarmers = users.filter(u => u.role === 'farmer').length;
   const pendingAbsences = absences.filter(a => a.status === 'pending').length;
-  
-  const myOrders = orders.filter(o => 
+
+  const myOrders = orders.filter(o =>
     o.userProgress.some(p => p.userId === currentUser.id)
   );
   const myActiveOrders = myOrders.filter(o => {
@@ -32,7 +36,7 @@ export function Dashboard({ orders, users, absences, currentUser }: DashboardPro
     return progress && progress.status === 'confirmed';
   });
 
-  const pendingConfirmations = orders.flatMap(o => 
+  const pendingConfirmations = orders.flatMap(o =>
     o.userProgress.filter(p => p.status === 'submitted')
   ).length;
 

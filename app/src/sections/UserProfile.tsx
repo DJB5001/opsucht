@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, User as UserIcon, Package, CheckCircle, Clock, Calendar } from 'lucide-react';
+import { User as UserIcon, Package, CheckCircle, Clock, Calendar } from 'lucide-react';
 import type { User, FarmOrder, AbsenceRequest } from '@/types';
 import { getBlockById } from '@/types';
 
@@ -17,9 +15,7 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ user, orders, absences, isOpen, onClose }: UserProfileProps) {
-  const [showPassword, setShowPassword] = useState(false);
-
-  const userOrders = orders.filter(order => 
+  const userOrders = orders.filter(order =>
     order.userProgress.some(progress => progress.userId === user.id)
   );
 
@@ -90,22 +86,6 @@ export function UserProfile({ user, orders, absences, isOpen, onClose }: UserPro
                 <div>
                   <p className="text-slate-400 text-sm">Erstellt am</p>
                   <p className="text-white font-medium">{formatDate(user.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-slate-400 text-sm">Passwort</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-white font-medium">
-                      {showPassword ? user.password : '••••••••'}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="h-8 w-8 p-0 text-slate-400 hover:text-white"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
                 </div>
               </div>
             </CardContent>

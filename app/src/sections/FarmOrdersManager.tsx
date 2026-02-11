@@ -9,17 +9,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Plus, Trash2, Package, Calendar, Users, CheckCircle, X } from 'lucide-react';
 import type { FarmOrder, OrderItem, User, UserOrderProgress } from '@/types';
 import { MINECRAFT_BLOCKS, BLOCK_CATEGORIES, getBlocksByCategory } from '@/types';
+import { useOrders } from '@/hooks/useOrders';
+import { useUsers } from '@/hooks/useUsers';
 
 interface FarmOrdersManagerProps {
-  orders: FarmOrder[];
-  users: User[];
   currentUser: User;
-  onCreateOrder: (order: Omit<FarmOrder, 'id' | 'createdAt' | 'userProgress'>) => void;
-  onDeleteOrder: (orderId: string) => void;
-  onConfirmOrder: (orderId: string, userId: string) => void;
 }
 
-export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, onDeleteOrder, onConfirmOrder }: FarmOrdersManagerProps) {
+export function FarmOrdersManager({ currentUser }: FarmOrdersManagerProps) {
+  const { orders, createOrder, deleteOrder, confirmOrder } = useOrders();
+  const { users } = useUsers();
+
   const [items, setItems] = useState<OrderItem[]>([{ blockId: '', amount: 1, unit: 'dk' }]);
   const [startDate, setStartDate] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -50,10 +50,10 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
     handleItemChange(index, 'blockId', '');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (items.some(i => !i.blockId) || !startDate || !deadline) return;
-    
-    onCreateOrder({
+
+    await createOrder({
       items,
       startDate,
       deadline,
@@ -76,9 +76,9 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDeleteOrder = async () => {
     if (orderToDelete) {
-      onDeleteOrder(orderToDelete.id);
+      await deleteOrder(orderToDelete.id);
       setDeleteDialogOpen(false);
       setOrderToDelete(null);
     }
@@ -89,9 +89,9 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
     setConfirmDialogOpen(true);
   };
 
-  const confirmOrder = () => {
+  const handleConfirmOrder = async () => {
     if (confirmationData) {
-      onConfirmOrder(confirmationData.orderId, confirmationData.userId);
+      await confirmOrder(confirmationData.orderId, confirmationData.userId);
       setConfirmDialogOpen(false);
       setConfirmationData(null);
     }
@@ -129,7 +129,7 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
     }
   };
 
-  const pendingConfirmations = orders.flatMap(order => 
+  const pendingConfirmations = orders.flatMap(order =>
     order.userProgress
       .filter(p => p.status === 'submitted')
       .map(p => ({
@@ -370,7 +370,7 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400 mb-3">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
@@ -424,7 +424,7 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
             </Button>
             <Button
               variant="destructive"
-              onClick={confirmDelete}
+              onClick={confirmDeleteOrder}
             >
               Löschen
             </Button>
@@ -450,7 +450,7 @@ export function FarmOrdersManager({ orders, users, currentUser, onCreateOrder, o
               Abbrechen
             </Button>
             <Button
-              onClick={confirmOrder}
+              onClick={handleConfirmOrder}
               className="bg-purple-600 hover:bg-purple-500 text-white"
             >
               <CheckCircle className="w-4 h-4 mr-1" />
